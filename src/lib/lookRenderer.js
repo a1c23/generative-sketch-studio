@@ -98,41 +98,4 @@ export function applyMaterial(p, material, textures, fillColor) {
   }
 }
 
-/**
- * Apply post-processing effects.
- * Vignette: concentric semi-transparent black ellipses in screen-space.
- * Bloom: no-op (requires shader pipeline — future work).
- */
-export function applyPostProcessing(p, postProcessing) {
-  const vignette = postProcessing.vignetteStrength ?? 0;
-
-  if (vignette > 0) {
-    p.push();
-    p.resetMatrix();
-    p.noLights();
-    p.noStroke();
-
-    // Set up ortho for screen-space overlay
-    const hw = p.width / 2;
-    const hh = p.height / 2;
-    p.ortho(-hw, hw, -hh, hh, -1, 1);
-
-    // Draw concentric ellipses with quadratic alpha falloff
-    const steps = 30;
-    const maxAlpha = (vignette / 100) * 180; // max darkness at edges
-    const maxDim = Math.max(p.width, p.height);
-
-    for (let i = steps; i >= 0; i--) {
-      const t = i / steps; // 1 = outer, 0 = center
-      const alpha = maxAlpha * t * t; // quadratic falloff
-      const size = 0.5 + 0.7 * t; // ring size (0.5 inner → 1.2 outer)
-
-      p.fill(0, 0, 0, alpha);
-      p.ellipse(0, 0, maxDim * size, maxDim * size * (p.height / p.width));
-    }
-
-    p.pop();
-  }
-
-  // Bloom: no-op — requires shader pipeline
-}
+// Post-processing is now handled by GPU filter shaders in postProcessing.js

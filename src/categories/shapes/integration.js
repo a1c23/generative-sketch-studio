@@ -14,13 +14,13 @@ export function drawShape(p, params) {
 
   p.push();
   p.rotateX(p.HALF_PI);
-  p.torus(55 * scale, 14 * scale, 24, 16);
+  p.torus(55 * scale, 14 * scale, 48, 32);
   p.pop();
 
   p.push();
   p.rotateZ(p.HALF_PI);
   p.rotateX(p.HALF_PI);
-  p.torus(55 * scale, 14 * scale, 24, 16);
+  p.torus(55 * scale, 14 * scale, 48, 32);
   p.pop();
 
   p.pop();

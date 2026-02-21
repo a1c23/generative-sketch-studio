@@ -61,6 +61,10 @@ export default function App() {
           ...prev.canvas.camera,
           ...(preset.canvas.camera || {}),
         },
+        postProcessing: {
+          ...prev.canvas.postProcessing,
+          ...(preset.canvas.postProcessing || {}),
+        },
       },
       palette: { ...prev.palette, ...preset.palette },
     }));

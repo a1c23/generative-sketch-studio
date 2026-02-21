@@ -44,8 +44,10 @@ export const DEFAULT_LOOK = {
     blendMode: 'BLEND',
     opacity: 255,
     postProcessing: {
-      vignetteStrength: 0,
-      bloomStrength: 0,
+      grain: { enabled: false, intensity: 0.08, speed: 1.0 },
+      bloom: { enabled: false, threshold: 0.6, strength: 1.5, blurAmount: 15 },
+      vignette: { enabled: false, strength: 0.3, radius: 0.8 },
+      chromaticAberration: { enabled: false, offset: 0.003 },
     },
     exportScale: 1,
   },

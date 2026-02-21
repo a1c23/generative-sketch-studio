@@ -1,7 +1,7 @@
 /**
  * Look Presets — starter canvas + palette combinations.
  * Each preset overrides canvas.background, canvas.lighting, canvas.material,
- * canvas.stroke, canvas.blendMode, canvas.camera, and palette.
+ * canvas.stroke, canvas.blendMode, canvas.camera, canvas.postProcessing, and palette.
  */
 
 const presets = [
@@ -21,6 +21,12 @@ const presets = [
       stroke: { enabled: false, weight: 1, color: '#000000' },
       blendMode: 'BLEND',
       camera: { projection: 'perspective' },
+      postProcessing: {
+        grain: { enabled: false, intensity: 0.08, speed: 1.0 },
+        bloom: { enabled: false, threshold: 0.6, strength: 1.5, blurAmount: 15 },
+        vignette: { enabled: false, strength: 0.3, radius: 0.8 },
+        chromaticAberration: { enabled: false, offset: 0.003 },
+      },
     },
     palette: {
       noun0: '#8888CC',
@@ -46,6 +52,12 @@ const presets = [
       stroke: { enabled: true, weight: 0.5, color: '#4466AA' },
       blendMode: 'ADD',
       camera: { projection: 'perspective' },
+      postProcessing: {
+        grain: { enabled: true, intensity: 0.06, speed: 1.0 },
+        bloom: { enabled: true, threshold: 0.5, strength: 1.8, blurAmount: 12 },
+        vignette: { enabled: true, strength: 0.4, radius: 0.75 },
+        chromaticAberration: { enabled: false, offset: 0.003 },
+      },
     },
     palette: {
       noun0: '#6688FF',
@@ -71,6 +83,12 @@ const presets = [
       stroke: { enabled: false, weight: 1, color: '#000000' },
       blendMode: 'BLEND',
       camera: { projection: 'perspective' },
+      postProcessing: {
+        grain: { enabled: false, intensity: 0.08, speed: 1.0 },
+        bloom: { enabled: false, threshold: 0.6, strength: 1.5, blurAmount: 15 },
+        vignette: { enabled: true, strength: 0.25, radius: 0.85 },
+        chromaticAberration: { enabled: false, offset: 0.003 },
+      },
     },
     palette: {
       noun0: '#E07A5F',
@@ -96,6 +114,12 @@ const presets = [
       stroke: { enabled: false, weight: 1, color: '#000000' },
       blendMode: 'BLEND',
       camera: { projection: 'perspective' },
+      postProcessing: {
+        grain: { enabled: true, intensity: 0.04, speed: 0.8 },
+        bloom: { enabled: false, threshold: 0.6, strength: 1.5, blurAmount: 15 },
+        vignette: { enabled: false, strength: 0.3, radius: 0.8 },
+        chromaticAberration: { enabled: true, offset: 0.002 },
+      },
     },
     palette: {
       noun0: '#457B9D',

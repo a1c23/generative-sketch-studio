@@ -11,6 +11,6 @@ export function drawShape(p, params) {
   p.push();
   p.rotateY(params.rotationY ?? 0);
   p.rotateX(params.rotationX ?? 0);
-  p.sphere(70 * scale, 24, 16);
+  p.sphere(70 * scale, 48, 32);
   p.pop();
 }

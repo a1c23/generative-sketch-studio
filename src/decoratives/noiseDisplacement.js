@@ -1,5 +1,7 @@
 /**
- * Noise Displacement decorative — a perlin-noise–driven undulating mesh surface.
+ * Noise Displacement decorative — GPU vertex displacement shader.
+ * Warps noun surfaces by displacing vertices along normals using sin/cos noise.
+ * Uses string-based GLSL .modify({}) to bypass the p5.strands transpiler.
  */
 
 const noiseDisplacement = {
@@ -11,43 +13,46 @@ const noiseDisplacement = {
     intensity: 30,
     speed: 0.3,
   },
+
+  /**
+   * Create the GPU displacement shader.
+   * @param {p5} p — p5 instance (must be called after createCanvas)
+   * @param {() => object} getParams — getter returning current params
+   * @returns {p5.Shader}
+   */
+  createShader(p, getParams) {
+    return p.baseMaterialShader().modify({
+      uniforms: {
+        'float uAmount': () => (getParams().intensity ?? 30) / 100,
+        'float uScale': () => (getParams().scale ?? 1) * 0.15,
+        'float uSpeed': () => getParams().speed ?? 0.3,
+        'float uTime': () => getParams().animated !== false ? p.millis() / 1000 : 0,
+      },
+      'Vertex getWorldInputs': `(Vertex inputs) {
+        vec3 n = normalize(inputs.normal);
+        vec3 pos = inputs.position;
+
+        // Multi-octave noise using sin/cos combinations (GPU-friendly)
+        float d = sin(pos.x * uScale + uTime * uSpeed)
+              * cos(pos.y * uScale + uTime * uSpeed * 0.7)
+              * sin(pos.z * uScale + uTime * uSpeed * 0.3);
+        // Second octave for detail
+        d += 0.5 * sin(pos.x * uScale * 2.0 + uTime)
+                  * cos(pos.z * uScale * 2.0);
+
+        d *= uAmount * 50.0;
+        inputs.position += n * d;
+        return inputs;
+      }`,
+    });
+  },
+
   generate(params, seed) {
     return null;
   },
-  draw(p, params, look, frameCount) {
-    const scale = params.scale ?? 1;
-    const intensity = params.intensity ?? 30;
-    const speed = params.speed ?? 0.3;
-    const t = params.animated !== false ? frameCount * 0.005 * speed : 0;
 
-    const decColor = look.palette?.decorative0 ?? '#CCAA66';
-    const c = p.color(decColor);
-    c.setAlpha(120);
-    p.stroke(c);
-    p.strokeWeight(0.5);
-    p.noFill();
-
-    const res = 16;
-    const size = 300 * scale;
-    const step = size / res;
-    const half = size / 2;
-
-    // Draw a displaced grid mesh on the XZ plane
-    for (let i = 0; i < res; i++) {
-      p.beginShape(p.TRIANGLE_STRIP);
-      for (let j = 0; j <= res; j++) {
-        for (let di = 0; di <= 1; di++) {
-          const x = -half + (i + di) * step;
-          const z = -half + j * step;
-          const nx = (i + di) * 0.15 * scale;
-          const nz = j * 0.15 * scale;
-          const y = (p.noise(nx + t, nz + t) - 0.5) * intensity * 2;
-          p.vertex(x, y, z);
-        }
-      }
-      p.endShape();
-    }
-  },
+  // No-op: rendering is handled by the orchestrator activating the shader per-noun
+  draw() {},
 };
 
 export default noiseDisplacement;
