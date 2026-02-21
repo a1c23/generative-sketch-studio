@@ -1,108 +1,123 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import ChapterNav from './components/ChapterNav.jsx';
+import ComposePanel from './components/ComposePanel.jsx';
+import RefinePanel from './components/RefinePanel.jsx';
+import FrameExportPanel from './components/FrameExportPanel.jsx';
 import SketchCanvas from './components/SketchCanvas.jsx';
-import ControlPanel from './components/ControlPanel.jsx';
-import ExportControls from './components/ExportControls.jsx';
-import { sketches } from './sketches/sketchRegistry.js';
+import { exportCanvas } from './lib/exportUtils.js';
 import './App.css';
 
 function generateSeed() {
   return Math.floor(Math.random() * 999999).toString().padStart(6, '0');
 }
 
+const defaultCompose = {
+  shapeScale: 1,
+  shapeCount: 1,
+  rotationX: 0,
+  rotationY: 0,
+  wireframe: false,
+  particlesOn: false,
+  connectorsOn: false,
+  fracturesOn: false,
+  gridOn: false,
+};
+
+const defaultRefine = {
+  texture: 'none',
+  baseColor: '#8888CC',
+  shininess: 40,
+  ambientIntensity: 80,
+  keyLightColor: '#FFFFFF',
+  fillLightColor: '#8888CC',
+  lightRig: 'default',
+};
+
+const defaultFrame = {
+  cameraAngle: 0,
+  cameraDistance: 500,
+  exportWidth: 2048,
+  exportHeight: 2048,
+};
+
 export default function App() {
+  const [chapter, setChapter] = useState('compose');
+  const [category, setCategory] = useState('flow');
   const [seed, setSeed] = useState(generateSeed);
-  const [activeSketch, setActiveSketch] = useState(Object.keys(sketches)[0]);
-  const [params, setParams] = useState({});
-  const [canvasRef, setCanvasRef] = useState(null);
+  const [composeParams, setComposeParams] = useState(defaultCompose);
+  const [refineParams, setRefineParams] = useState(defaultRefine);
+  const [frameParams, setFrameParams] = useState(defaultFrame);
+  const [canvasEl, setCanvasEl] = useState(null);
 
-  // Refresh shapes = new seed, keep all params
-  const handleRefresh = useCallback(() => {
+  // Mutable ref so draw loop reads latest params without re-creating p5
+  const paramsRef = useRef({ composeParams, refineParams, frameParams });
+  paramsRef.current = { composeParams, refineParams, frameParams };
+
+  const handleComposeChange = useCallback((key, val) => {
+    setComposeParams((prev) => ({ ...prev, [key]: val }));
+  }, []);
+
+  const handleRefineChange = useCallback((key, val) => {
+    setRefineParams((prev) => ({ ...prev, [key]: val }));
+  }, []);
+
+  const handleFrameChange = useCallback((key, val) => {
+    setFrameParams((prev) => ({ ...prev, [key]: val }));
+  }, []);
+
+  const handleRefreshSeed = useCallback(() => {
     setSeed(generateSeed());
   }, []);
 
-  // Reset = new seed + clear all params back to defaults
-  const handleReset = useCallback(() => {
-    setSeed(generateSeed());
-    setParams({});
-  }, []);
-
-  const handleSeedChange = useCallback((e) => {
-    setSeed(e.target.value);
-  }, []);
-
-  const handleParamChange = useCallback((key, value) => {
-    setParams((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const sketchConfig = sketches[activeSketch];
+  const handleExport = useCallback(() => {
+    exportCanvas(canvasEl);
+  }, [canvasEl]);
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1 className="app-title">Sketch Studio</h1>
-        </div>
+      <ChapterNav active={chapter} onChange={setChapter} />
 
-        <div className="seed-section">
-          <label className="seed-label">Seed</label>
-          <div className="seed-row">
-            <input
-              className="seed-input"
-              type="text"
-              value={seed}
-              onChange={handleSeedChange}
-              spellCheck={false}
+      <div className="app-body">
+        <aside className="sidebar">
+          {chapter === 'compose' && (
+            <ComposePanel
+              category={category}
+              onCategoryChange={setCategory}
+              seed={seed}
+              onSeedChange={setSeed}
+              onRefreshSeed={handleRefreshSeed}
+              composeParams={composeParams}
+              onComposeChange={handleComposeChange}
+            />
+          )}
+
+          {chapter === 'refine' && (
+            <RefinePanel
+              refineParams={refineParams}
+              onRefineChange={handleRefineChange}
+            />
+          )}
+
+          {chapter === 'frameExport' && (
+            <FrameExportPanel
+              frameParams={frameParams}
+              onFrameChange={handleFrameChange}
+              onExport={handleExport}
+            />
+          )}
+        </aside>
+
+        <main className="canvas-area">
+          <div className="canvas-border">
+            <SketchCanvas
+              category={category}
+              seed={seed}
+              paramsRef={paramsRef}
+              onCanvasReady={setCanvasEl}
             />
           </div>
-          <div className="seed-buttons">
-            <button className="btn btn-accent" onClick={handleRefresh}>
-              Refresh
-            </button>
-            <button className="btn btn-secondary" onClick={handleReset}>
-              Reset
-            </button>
-          </div>
-        </div>
-
-        <div className="sketch-select-section">
-          <label className="section-label">Sketch</label>
-          <select
-            className="sketch-select"
-            value={activeSketch}
-            onChange={(e) => {
-              setActiveSketch(e.target.value);
-              setParams({});
-            }}
-          >
-            {Object.entries(sketches).map(([key, s]) => (
-              <option key={key} value={key}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {sketchConfig && (
-          <ControlPanel
-            params={sketchConfig.params}
-            values={params}
-            onChange={handleParamChange}
-          />
-        )}
-
-        <div className="sidebar-footer">
-          <ExportControls canvasRef={canvasRef} />
-        </div>
-      </aside>
-
-      <main className="canvas-area">
-        <SketchCanvas
-          sketchKey={activeSketch}
-          seed={seed}
-          params={params}
-          onCanvasReady={setCanvasRef}
-        />
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
