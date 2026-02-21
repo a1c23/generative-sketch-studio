@@ -1,6 +1,10 @@
 /**
  * Experience — signature shape: ellipsoid
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'ellipsoid' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

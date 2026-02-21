@@ -1,6 +1,10 @@
 /**
  * Data — signature shape: tall box (column/slab)
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'box' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

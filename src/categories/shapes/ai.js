@@ -1,6 +1,10 @@
 /**
  * AI — signature shape: sphere
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'sphere' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

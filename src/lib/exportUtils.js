@@ -6,10 +6,24 @@
 export function exportCanvas(canvas, scale = 1) {
   if (!canvas) return;
 
-  // For scale > 1, re-render at higher resolution would go here.
-  // For now, export the canvas at its current size.
-  const link = document.createElement('a');
-  link.download = `sketch-${Date.now()}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  if (scale > 1) {
+    // Create a scaled offscreen canvas
+    const w = canvas.width * scale;
+    const h = canvas.height * scale;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = w;
+    offscreen.height = h;
+    const ctx = offscreen.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, w, h);
+
+    const link = document.createElement('a');
+    link.download = `sketch-${Date.now()}@${scale}x.png`;
+    link.href = offscreen.toDataURL('image/png');
+    link.click();
+  } else {
+    const link = document.createElement('a');
+    link.download = `sketch-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
 }

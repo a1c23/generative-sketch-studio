@@ -1,122 +1,168 @@
 import { useState, useCallback, useRef } from 'react';
 import ChapterNav from './components/ChapterNav.jsx';
 import ComposePanel from './components/ComposePanel.jsx';
-import RefinePanel from './components/RefinePanel.jsx';
-import FrameExportPanel from './components/FrameExportPanel.jsx';
+import LookPanel from './components/LookPanel.jsx';
+import ScenePanel from './components/ScenePanel.jsx';
+import ExportPanel from './components/ExportPanel.jsx';
 import SketchCanvas from './components/SketchCanvas.jsx';
 import { exportCanvas } from './lib/exportUtils.js';
+import { DEFAULT_LOOK } from './lib/lookSchema.js';
+import { setIn, generateSeed, createNoun, createDecorativeInstance } from './lib/lookUtils.js';
+import { registryList } from './decoratives/registry.js';
+import presets from './looks/presets.js';
 import './App.css';
-
-function generateSeed() {
-  return Math.floor(Math.random() * 999999).toString().padStart(6, '0');
-}
-
-const defaultCompose = {
-  shapeScale: 1,
-  shapeCount: 1,
-  rotationX: 0,
-  rotationY: 0,
-  wireframe: false,
-  particlesOn: false,
-  connectorsOn: false,
-  fracturesOn: false,
-  gridOn: false,
-};
-
-const defaultRefine = {
-  texture: 'none',
-  baseColor: '#8888CC',
-  shininess: 40,
-  ambientIntensity: 80,
-  keyLightColor: '#FFFFFF',
-  fillLightColor: '#8888CC',
-  lightRig: 'default',
-};
-
-const defaultFrame = {
-  cameraAngle: 0,
-  cameraDistance: 500,
-  exportWidth: 2048,
-  exportHeight: 2048,
-};
 
 export default function App() {
   const [chapter, setChapter] = useState('compose');
-  const [category, setCategory] = useState('flow');
-  const [seed, setSeed] = useState(generateSeed);
-  const [composeParams, setComposeParams] = useState(defaultCompose);
-  const [refineParams, setRefineParams] = useState(defaultRefine);
-  const [frameParams, setFrameParams] = useState(defaultFrame);
+  const [look, setLook] = useState(() => ({
+    ...DEFAULT_LOOK,
+    seed: generateSeed(),
+  }));
   const [canvasEl, setCanvasEl] = useState(null);
 
-  // Mutable ref so draw loop reads latest params without re-creating p5
-  const paramsRef = useRef({ composeParams, refineParams, frameParams });
-  paramsRef.current = { composeParams, refineParams, frameParams };
+  // Mutable ref so draw loop reads latest look without re-creating p5
+  const lookRef = useRef(look);
+  lookRef.current = look;
 
-  const handleComposeChange = useCallback((key, val) => {
-    setComposeParams((prev) => ({ ...prev, [key]: val }));
+  // Path-based updater: setLookPath('canvas.camera.tilt', -20)
+  const setLookPath = useCallback((path, value) => {
+    setLook((prev) => setIn(prev, path, value));
   }, []);
 
-  const handleRefineChange = useCallback((key, val) => {
-    setRefineParams((prev) => ({ ...prev, [key]: val }));
-  }, []);
-
-  const handleFrameChange = useCallback((key, val) => {
-    setFrameParams((prev) => ({ ...prev, [key]: val }));
-  }, []);
-
+  // --- Seed ---
   const handleRefreshSeed = useCallback(() => {
-    setSeed(generateSeed());
+    setLook((prev) => ({ ...prev, seed: generateSeed() }));
   }, []);
 
+  const handleSeedChange = useCallback((newSeed) => {
+    setLook((prev) => ({ ...prev, seed: newSeed }));
+  }, []);
+
+  // --- Look Presets ---
+  const handleApplyPreset = useCallback((presetKey) => {
+    const preset = presets.find((p) => p.key === presetKey);
+    if (!preset) return;
+    setLook((prev) => ({
+      ...prev,
+      canvas: {
+        ...prev.canvas,
+        background: { ...prev.canvas.background, ...preset.canvas.background },
+        lighting: { ...prev.canvas.lighting, ...preset.canvas.lighting },
+        material: {
+          ...prev.canvas.material,
+          ...(preset.canvas.material || {}),
+        },
+        stroke: {
+          ...prev.canvas.stroke,
+          ...(preset.canvas.stroke || {}),
+        },
+        blendMode: preset.canvas.blendMode ?? prev.canvas.blendMode,
+        camera: {
+          ...prev.canvas.camera,
+          ...(preset.canvas.camera || {}),
+        },
+      },
+      palette: { ...prev.palette, ...preset.palette },
+    }));
+  }, []);
+
+  // --- Nouns ---
+  const handleAddNoun = useCallback(() => {
+    setLook((prev) => {
+      if (prev.nouns.length >= 2) return prev;
+      return { ...prev, nouns: [...prev.nouns, createNoun()] };
+    });
+  }, []);
+
+  const handleRemoveNoun = useCallback((nounId) => {
+    setLook((prev) => ({
+      ...prev,
+      nouns: prev.nouns.filter((n) => n.id !== nounId),
+    }));
+  }, []);
+
+  const handleUpdateNoun = useCallback((nounIndex, path, value) => {
+    setLookPath(`nouns.${nounIndex}.${path}`, value);
+  }, [setLookPath]);
+
+  // --- Decoratives ---
+  const handleAddDecorative = useCallback((registryEntry) => {
+    setLook((prev) => ({
+      ...prev,
+      decoratives: [...prev.decoratives, createDecorativeInstance(registryEntry)],
+    }));
+  }, []);
+
+  const handleRemoveDecorative = useCallback((decId) => {
+    setLook((prev) => ({
+      ...prev,
+      decoratives: prev.decoratives.filter((d) => d.id !== decId),
+    }));
+  }, []);
+
+  const handleUpdateDecorative = useCallback((decIndex, paramKey, value) => {
+    setLookPath(`decoratives.${decIndex}.params.${paramKey}`, value);
+  }, [setLookPath]);
+
+  // --- Export ---
   const handleExport = useCallback(() => {
-    exportCanvas(canvasEl);
-  }, [canvasEl]);
+    const scale = look.canvas.exportScale ?? 1;
+    exportCanvas(canvasEl, scale);
+  }, [canvasEl, look.canvas.exportScale]);
 
   return (
     <div className="app">
+      {/* Canvas fills viewport */}
+      <SketchCanvas
+        seed={look.seed}
+        lookRef={lookRef}
+        onCanvasReady={setCanvasEl}
+      />
+
+      {/* Pill nav overlay */}
       <ChapterNav active={chapter} onChange={setChapter} />
 
-      <div className="app-body">
-        <aside className="sidebar">
-          {chapter === 'compose' && (
-            <ComposePanel
-              category={category}
-              onCategoryChange={setCategory}
-              seed={seed}
-              onSeedChange={setSeed}
-              onRefreshSeed={handleRefreshSeed}
-              composeParams={composeParams}
-              onComposeChange={handleComposeChange}
-            />
-          )}
+      {/* Floating panel overlay */}
+      <div className="floating-panel">
+        {chapter === 'compose' && (
+          <ComposePanel
+            look={look}
+            setLookPath={setLookPath}
+            onSeedChange={handleSeedChange}
+            onRefreshSeed={handleRefreshSeed}
+            onApplyPreset={handleApplyPreset}
+            onAddNoun={handleAddNoun}
+            onRemoveNoun={handleRemoveNoun}
+            onUpdateNoun={handleUpdateNoun}
+            onAddDecorative={handleAddDecorative}
+            onRemoveDecorative={handleRemoveDecorative}
+            onUpdateDecorative={handleUpdateDecorative}
+            registryList={registryList}
+            presets={presets}
+          />
+        )}
 
-          {chapter === 'refine' && (
-            <RefinePanel
-              refineParams={refineParams}
-              onRefineChange={handleRefineChange}
-            />
-          )}
+        {chapter === 'look' && (
+          <LookPanel
+            look={look}
+            setLookPath={setLookPath}
+          />
+        )}
 
-          {chapter === 'frameExport' && (
-            <FrameExportPanel
-              frameParams={frameParams}
-              onFrameChange={handleFrameChange}
-              onExport={handleExport}
-            />
-          )}
-        </aside>
+        {chapter === 'scene' && (
+          <ScenePanel
+            look={look}
+            setLookPath={setLookPath}
+          />
+        )}
 
-        <main className="canvas-area">
-          <div className="canvas-border">
-            <SketchCanvas
-              category={category}
-              seed={seed}
-              paramsRef={paramsRef}
-              onCanvasReady={setCanvasEl}
-            />
-          </div>
-        </main>
+        {chapter === 'export' && (
+          <ExportPanel
+            look={look}
+            setLookPath={setLookPath}
+            onExport={handleExport}
+          />
+        )}
       </div>
     </div>
   );

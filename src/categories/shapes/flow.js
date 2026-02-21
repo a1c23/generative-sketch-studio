@@ -1,6 +1,10 @@
 /**
  * Flow Design — signature shape: rotating torus
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'torus' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
   const count = params.shapeCount ?? 1;

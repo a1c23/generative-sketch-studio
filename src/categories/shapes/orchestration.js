@@ -1,6 +1,10 @@
 /**
  * Orchestration — signature shape: cone
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'cone' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

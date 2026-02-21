@@ -1,6 +1,10 @@
 /**
  * Automation — signature shape: cylinder
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'cylinder' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

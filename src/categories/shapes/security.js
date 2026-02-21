@@ -1,6 +1,10 @@
 /**
  * Security — signature shape: box (shield-like)
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'box' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

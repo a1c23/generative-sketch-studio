@@ -1,6 +1,10 @@
 /**
  * Integration — signature shape: two overlapping tori
  */
+export function getGeometry() {
+  return { type: 'procedural', primitive: 'torus-pair' };
+}
+
 export function drawShape(p, params) {
   const scale = params.shapeScale ?? 1;
 

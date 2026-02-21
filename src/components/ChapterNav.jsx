@@ -1,7 +1,8 @@
 const chapters = [
-  { key: 'compose', label: 'Build' },
-  { key: 'refine', label: 'Refine' },
-  { key: 'frameExport', label: 'Export' },
+  { key: 'compose', label: 'Compose' },
+  { key: 'look', label: 'Look' },
+  { key: 'scene', label: 'Scene' },
+  { key: 'export', label: 'Export' },
 ];
 
 export default function ChapterNav({ active, onChange }) {
